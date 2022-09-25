@@ -13,9 +13,13 @@ import androidx.appcompat.app.AppCompatActivity
 import com.github.niqdev.ipcam.databinding.ActivityIpcamSnapshotBinding
 import com.github.niqdev.ipcam.settings.SettingsActivity
 import com.github.niqdev.mjpeg.DisplayMode
-import com.github.niqdev.mjpeg.Mjpeg
 import com.github.niqdev.mjpeg.MjpegInputStream
+import com.github.niqdev.mjpeg.MjpegK
 import com.github.niqdev.mjpeg.MjpegRecordingHandler
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.launch
 import java.util.*
 
 class IpCamSnapshotActivity : AppCompatActivity() {
@@ -49,20 +53,23 @@ class IpCamSnapshotActivity : AppCompatActivity() {
     }
 
     private fun loadIpCam() {
-        Mjpeg.newInstance()
-            .credential(getPreference(SettingsActivity.PREF_AUTH_USERNAME), getPreference(SettingsActivity.PREF_AUTH_PASSWORD))
-            .open(getPreference(SettingsActivity.PREF_IPCAM_URL), TIMEOUT)
-            .subscribe(
-                { inputStream: MjpegInputStream ->
+        CoroutineScope(Dispatchers.IO).launch {
+            MjpegK()
+                .credential(getPreference(SettingsActivity.PREF_AUTH_USERNAME), getPreference(SettingsActivity.PREF_AUTH_PASSWORD))
+                .open(getPreference(SettingsActivity.PREF_IPCAM_URL).orEmpty(), TIMEOUT)
+                .collect { inputStream: MjpegInputStream ->
                     binding.mjpegViewSnapshot.setSource(inputStream)
                     binding.mjpegViewSnapshot.setDisplayMode(calculateDisplayMode())
                     binding.mjpegViewSnapshot.showFps(true)
                 }
-            ) { throwable: Throwable ->
-                Log.e(javaClass.simpleName, "mjpeg error", throwable)
-                Toast.makeText(this, "Error ${throwable.javaClass.simpleName}\n${getPreference(SettingsActivity.PREF_IPCAM_URL)}", Toast.LENGTH_LONG)
-                    .show()
-            }
+        }
+//            .subscribe(
+//
+//            ) { throwable: Throwable ->
+//                Log.e(javaClass.simpleName, "mjpeg error", throwable)
+//                Toast.makeText(this, "Error ${throwable.javaClass.simpleName}\n${getPreference(SettingsActivity.PREF_IPCAM_URL)}", Toast.LENGTH_LONG)
+//                    .show()
+//            }
     }
 
     private fun getStringTime(cnt: Int): String {
@@ -138,6 +145,6 @@ class IpCamSnapshotActivity : AppCompatActivity() {
     }
 
     companion object {
-        private const val TIMEOUT = 5
+        private const val TIMEOUT = 5_000L
     }
 }

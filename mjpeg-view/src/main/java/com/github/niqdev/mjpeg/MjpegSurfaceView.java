@@ -15,12 +15,12 @@ public class MjpegSurfaceView extends SurfaceView implements SurfaceHolder.Callb
 
     private static final int DEFAULT_TYPE = 0;
     // issue in attrs.xml - verify reserved keywords
-    private static final SparseArray<Mjpeg.Type> TYPE;
+    private static final SparseArray<MjpegKType> TYPE;
 
     static {
         TYPE = new SparseArray<>();
-        TYPE.put(0, Mjpeg.Type.DEFAULT);
-        TYPE.put(1, Mjpeg.Type.NATIVE);
+        TYPE.put(0, MjpegKType.DEFAULT);
+        TYPE.put(1, MjpegKType.NATIVE);
     }
 
     private MjpegView mMjpegView;
@@ -49,12 +49,12 @@ public class MjpegSurfaceView extends SurfaceView implements SurfaceHolder.Callb
         }
     }
 
-    public Mjpeg.Type getPropertyType(AttributeSet attributeSet, @StyleableRes int[] attrs, int attrIndex) {
+    public MjpegKType getPropertyType(AttributeSet attributeSet, @StyleableRes int[] attrs, int attrIndex) {
         TypedArray typedArray = getContext().getTheme()
                 .obtainStyledAttributes(attributeSet, attrs, 0, 0);
         try {
             int typeIndex = typedArray.getInt(attrIndex, DEFAULT_TYPE);
-            Mjpeg.Type type = TYPE.get(typeIndex);
+            MjpegKType type = TYPE.get(typeIndex);
             return type != null ? type : TYPE.get(DEFAULT_TYPE);
         } finally {
             typedArray.recycle();

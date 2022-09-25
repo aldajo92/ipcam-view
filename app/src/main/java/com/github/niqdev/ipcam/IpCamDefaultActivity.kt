@@ -10,8 +10,12 @@ import androidx.appcompat.app.AppCompatActivity
 import com.github.niqdev.ipcam.databinding.ActivityIpcamDefaultBinding
 import com.github.niqdev.ipcam.settings.SettingsActivity
 import com.github.niqdev.mjpeg.DisplayMode
-import com.github.niqdev.mjpeg.Mjpeg
 import com.github.niqdev.mjpeg.MjpegInputStream
+import com.github.niqdev.mjpeg.MjpegK
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.launch
 
 class IpCamDefaultActivity : AppCompatActivity() {
 
@@ -37,22 +41,25 @@ class IpCamDefaultActivity : AppCompatActivity() {
         DisplayMode.BEST_FIT
 
     private fun loadIpCam() {
-        Mjpeg.newInstance()
+        CoroutineScope(Dispatchers.IO).launch {
+            MjpegK()
                 .credential(getPreference(SettingsActivity.PREF_AUTH_USERNAME), getPreference(SettingsActivity.PREF_AUTH_PASSWORD))
-                .open(getPreference(SettingsActivity.PREF_IPCAM_URL), TIMEOUT)
-                .subscribe(
-                        { inputStream: MjpegInputStream ->
-                            binding.mjpegViewDefault.setSource(inputStream)
-                            binding.mjpegViewDefault.setDisplayMode(calculateDisplayMode())
-                            binding.mjpegViewDefault.flipHorizontal(getBooleanPreference(SettingsActivity.PREF_FLIP_HORIZONTAL))
-                            binding.mjpegViewDefault.flipVertical(getBooleanPreference(SettingsActivity.PREF_FLIP_VERTICAL))
-                            binding.mjpegViewDefault.setRotate(getPreference(SettingsActivity.PREF_ROTATE_DEGREES)!!.toFloat())
-                            binding.mjpegViewDefault.showFps(true)
-                        }
-                ) { throwable: Throwable ->
-                    Log.e(javaClass.simpleName, "mjpeg error", throwable)
-                    Toast.makeText(this, "Error ${throwable.javaClass.simpleName}\n${getPreference(SettingsActivity.PREF_IPCAM_URL)}", Toast.LENGTH_LONG).show()
+                .open(getPreference(SettingsActivity.PREF_IPCAM_URL).orEmpty(), TIMEOUT)
+                .collect{ inputStream: MjpegInputStream ->
+                    binding.mjpegViewDefault.setSource(inputStream)
+                    binding.mjpegViewDefault.setDisplayMode(calculateDisplayMode())
+                    binding.mjpegViewDefault.flipHorizontal(getBooleanPreference(SettingsActivity.PREF_FLIP_HORIZONTAL))
+                    binding.mjpegViewDefault.flipVertical(getBooleanPreference(SettingsActivity.PREF_FLIP_VERTICAL))
+                    binding.mjpegViewDefault.setRotate(getPreference(SettingsActivity.PREF_ROTATE_DEGREES)!!.toFloat())
+                    binding.mjpegViewDefault.showFps(true)
                 }
+        }
+//                .subscribe(
+//
+//                ) { throwable: Throwable ->
+//                    Log.e(javaClass.simpleName, "mjpeg error", throwable)
+//                    Toast.makeText(this, "Error ${throwable.javaClass.simpleName}\n${getPreference(SettingsActivity.PREF_IPCAM_URL)}", Toast.LENGTH_LONG).show()
+//                }
     }
 
     override fun onResume() {
@@ -66,6 +73,6 @@ class IpCamDefaultActivity : AppCompatActivity() {
     }
 
     companion object {
-        private const val TIMEOUT = 5
+        private const val TIMEOUT = 5_000L
     }
 }
